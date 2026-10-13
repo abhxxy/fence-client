@@ -11,6 +11,7 @@ Static site. No build step, no backend, no API keys. Works on Vercel, Netlify or
    - `og.jpg`: the preview image shown when the link is shared (1200 x 630).
    - `favicon.svg`: browser tab icon.
 3. Change `theme.brand` and `theme.accent` to the client's colours. Everything else is derived.
+   The 3D scenes pick up the hero material from `hero.material`; the cutaway bullet points live in `promise.cutaway`.
 4. Deploy.
 
 Nothing in `index.html`, `styles.css`, `app.js` or `fence3d.js` is client-specific.
@@ -33,6 +34,7 @@ Accept the defaults (framework: Other, no build command, output directory: `./`)
 - `index.html` page structure
 - `styles.css` design system (colours come from the config at runtime)
 - `app.js` renders the config, visualizer, gallery, lead form, 3D hero
-- `fence3d.js` the 3D fence scene used by the scroll-built hero
+- `fence3d.js` the 3D fence scene used by the scroll-built hero and the 3D visualizer
+- `scenes3d.js` the small 3D scenes (post cutaway, step illustrations, estimate preview); they share one WebGL context
 - `site.config.js` the only file you edit per client
 - `assets/` images

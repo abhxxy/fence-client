@@ -49,15 +49,15 @@
 </section>
 
 <section id="promise"><div class="wrap grid">
-  <div class="rv"><div class="eyebrow">Our promise</div><h2 data-bind="promise.heading"></h2><p data-bind="promise.text"></p></div>
-  <div class="stats rv" id="stats"></div>
+  <div class="rv"><div class="eyebrow">Our promise</div><h2 data-bind="promise.heading"></h2><p data-bind="promise.text"></p><div class="stats" id="stats"></div></div>
+  <div class="cut rv"><div class="cut-stage"><canvas id="cutCanvas"></canvas><div class="cut-hint">Scroll to set the post · drag to spin</div></div><div class="cut-title" data-bind="promise.cutaway.title"></div><ul class="cut-legend" id="cutLegend"></ul></div>
 </div></section>
 
 <section id="visualizer"><div class="wrap">
   <div class="sec-head rv"><div class="eyebrow">Material visualizer</div><h2 data-bind="visualizer.heading"></h2><p class="lede" data-bind="visualizer.sub"></p></div>
   <div class="viz">
     <div class="rv">
-      <div class="viz-stage" id="vizStage"><div class="label" id="vizLabel"></div><div class="yard">Same yard, same angle. Only the fence changes.</div></div>
+      <div class="viz-stage" id="vizStage"><canvas id="vizCanvas"></canvas><div class="label" id="vizLabel"></div><div class="pillbar viz-mode" id="vizMode"><button type="button" data-v="photo" aria-pressed="true">Photo</button><button type="button" data-v="3d" aria-pressed="false">3D · drag to orbit</button></div><div class="yard" id="vizYardNote">Same yard, same angle. Only the fence changes.</div></div>
       <div class="viz-tabs" id="vizTabs" role="tablist" aria-label="Fence material"></div>
     </div>
     <aside class="viz-info rv" id="vizInfo"></aside>
@@ -78,7 +78,7 @@
 
 <section id="reviews"><div class="wrap">
   <div class="sec-head rv"><div><div class="eyebrow">Reviews</div><h2 data-bind="reviews.heading"></h2></div><a class="btn ghost" data-bind="reviewUrl" target="_blank" rel="noopener" data-bind-text="reviewCta"></a></div>
-  <div class="rev" id="revGrid"></div>
+  <div class="flow" id="revFlow"><div class="flow-track" id="revGrid"></div><button type="button" class="flow-btn prev" aria-label="Previous review">&#8249;</button><button type="button" class="flow-btn next" aria-label="Next review">&#8250;</button></div><div class="dots" id="revDots"></div>
 </div></section>
 
 <section id="badges"><div class="wrap"><div class="badges" id="badgeGrid"></div></div></section>
@@ -86,7 +86,7 @@
 <section id="estimate"><div class="wrap cta">
   <div class="rv">
     <div class="eyebrow">Free estimate</div><h2 data-bind="form.heading"></h2><p class="lede" data-bind="form.sub"></p>
-    <div class="pick" id="pick"><img alt=""><div><b></b><span>Selected in the visualizer</span></div><a href="#visualizer">Change</a></div>
+    <div class="pick" id="pick"><div class="pick-3d"><canvas id="pickCanvas"></canvas><img alt=""></div><div><b></b><span>Selected in the visualizer · drag to spin</span></div><a href="#visualizer">Change</a></div>
     <div class="call">Prefer to talk? <span data-bind="owner"></span> answers the phone.<a data-bind="tel"><span data-bind="phone"></span></a><span data-bind="hours"></span></div>
   </div>
   <form id="leadForm" class="rv" novalidate>
@@ -122,6 +122,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
 <script src="fence3d.js"></script>
+<script src="scenes3d.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

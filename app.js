@@ -39,8 +39,9 @@
 
   /* ---------- sections from config ---------- */
   $('stats').innerHTML = S.promise.stats.map(s => `<div><b>${esc(s.value)}<small>${esc(s.suffix)}</small></b><span>${esc(s.label)}</span></div>`).join('');
-  $('stepsGrid').innerHTML = S.steps.items.map((s, i) => `<div class="step rv"><div class="n">${i + 1}</div><h3>${esc(s.title)}</h3><p>${esc(s.text)}</p></div>`).join('');
-  $('revGrid').innerHTML = S.reviews.items.map(r => `<div class="card rv"><div class="stars">${'★'.repeat(r.stars || 5)}</div><p>${esc(r.text)}</p><div class="who"><i>${esc(r.name.split(' ').map(w => w[0]).join('').slice(0, 2))}</i><div><b>${esc(r.name)}</b><span>${esc(r.town)}</span></div></div></div>`).join('');
+  $('stepsGrid').innerHTML = S.steps.items.map((s, i) => `<div class="step rv">${s.scene ? `<div class="step-3d"><canvas data-scene="${esc(s.scene)}"></canvas></div>` : ''}<div class="n">${i + 1}</div><h3>${esc(s.title)}</h3><p>${esc(s.text)}</p></div>`).join('');
+  $('revGrid').innerHTML = S.reviews.items.map(r => `<div class="card"><div class="stars">${'★'.repeat(r.stars || 5)}</div><p>${esc(r.text)}</p><div class="who"><i>${esc(r.name.split(' ').map(w => w[0]).join('').slice(0, 2))}</i><div><b>${esc(r.name)}</b><span>${esc(r.town)}</span></div></div></div>`).join('');
+  $('cutLegend').innerHTML = ((S.promise.cutaway || {}).points || []).map(t => `<li>${esc(t)}</li>`).join('');
   const ICONS = {
     shield: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>',
     check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 5-5"/></svg>',
@@ -51,7 +52,9 @@
     aluminum: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V6l1-2 1 2v15M10 21V6l1-2 1 2v15M16 21V6l1-2 1 2v15M22 21V8M2 10h20M2 16h20"/></svg>',
     chainlink: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V5M20 21V5M4 5h16M4 9l4 4-4 4M12 5l4 4-4 4 4 4M8 13l4-4 4 4-4 4z"/></svg>'
   };
-  $('badgeGrid').innerHTML = S.badges.map(b => `<div class="badge rv"><i>${ICONS[b.icon] || ICONS.check}</i><div><b>${esc(b.title)}</b><span>${esc(b.text)}</span></div></div>`).join('');
+  $('badgeGrid').innerHTML = S.badges.map(b => `<div class="badge rv" tabindex="0"><div class="badge-inner"><div class="face front"><i>${ICONS[b.icon] || ICONS.check}</i><b>${esc(b.title)}</b><span class="hint">Tap to flip</span></div><div class="face back"><small>${esc(b.title)}</small><p>${esc(b.text)}</p></div></div></div>`).join('');
+  $('badgeGrid').addEventListener('click', e => { const b = e.target.closest('.badge'); if (b) b.classList.toggle('flipped'); });
+  $('badgeGrid').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { const b = e.target.closest('.badge'); if (b) { e.preventDefault(); b.classList.toggle('flipped'); } } });
   $('areas').innerHTML = B.serviceAreas.map(a => `<span>${esc(a)}</span>`).join('');
   $('footLinks').innerHTML = (S.footer.links || []).map(l => `<a href="${esc(l.url)}" target="_blank" rel="noopener" style="margin-right:14px">${esc(l.label)}</a>`).join('');
   const mapsLink = 'https://www.google.com/maps/search/' + encodeURIComponent(B.mapQuery);
@@ -63,10 +66,32 @@
   $('galChips').innerHTML = tags.map(t => `<button type="button" class="chip" data-tag="${esc(t)}" aria-pressed="${t === 'all'}">${t === 'all' ? 'All' : esc(matName(t))}</button>`).join('');
   $('galGrid').innerHTML = S.gallery.items.map((g, i) => `<figure data-tag="${esc(g.tag)}" data-i="${i}" class="rv"><img src="${esc(g.src)}" alt="${esc(g.caption)}" loading="lazy"><span class="tag">${esc(matName(g.tag))}</span><figcaption>${esc(g.caption)}</figcaption></figure>`).join('');
   $('galChips').addEventListener('click', e => { const b = e.target.closest('.chip'); if (!b) return; $('galChips').querySelectorAll('.chip').forEach(c => c.setAttribute('aria-pressed', String(c === b))); const t = b.dataset.tag; $('galGrid').querySelectorAll('figure').forEach(f => f.classList.toggle('hide', t !== 'all' && f.dataset.tag !== t)); });
+  if (matchMedia('(hover:hover) and (pointer:fine)').matches && !reduce) {
+    $('galGrid').addEventListener('pointermove', e => { const f = e.target.closest('figure'); if (!f) return; const r = f.getBoundingClientRect(); const px = (e.clientX - r.left) / r.width, py = (e.clientY - r.top) / r.height; f.classList.add('tilt'); f.style.setProperty('--gx', (px * 100) + '%'); f.style.setProperty('--gy', (py * 100) + '%'); f.style.transform = `perspective(900px) rotateX(${(.5 - py) * 10}deg) rotateY(${(px - .5) * 12}deg) translateZ(8px)`; });
+    $('galGrid').addEventListener('pointerout', e => { const f = e.target.closest('figure'); if (f && !f.contains(e.relatedTarget)) { f.classList.remove('tilt'); f.style.transform = ''; } });
+  }
   const lb = $('lightbox');
   $('galGrid').addEventListener('click', e => { const f = e.target.closest('figure'); if (!f) return; const g = S.gallery.items[+f.dataset.i]; lb.querySelector('img').src = g.src; lb.querySelector('.cap').textContent = g.caption; lb.classList.add('on'); });
   lb.addEventListener('click', e => { if (e.target === lb || e.target.tagName === 'BUTTON') lb.classList.remove('on'); });
   addEventListener('keydown', e => { if (e.key === 'Escape') lb.classList.remove('on'); });
+
+  /* ---------- reviews: 3D coverflow ---------- */
+  (function flow() {
+    const cards = [...$('revGrid').children], n = cards.length; if (!n) return; let cur = 0, timer = null;
+    $('revDots').innerHTML = cards.map((_, i) => `<button type="button" aria-label="Review ${i + 1}" aria-pressed="${i === 0}"></button>`).join('');
+    const narrow = () => innerWidth < 700;
+    function layout() {
+      cards.forEach((c, i) => { let d = i - cur; if (d > n / 2) d -= n; if (d < -n / 2) d += n; const ad = Math.abs(d); const step = narrow() ? 88 : 62; c.style.transform = `translateX(${d * step}%) translateZ(${-ad * 160}px) rotateY(${-d * 28}deg) scale(${1 - ad * .06})`; c.style.opacity = ad > 2 ? 0 : 1; c.style.filter = ad ? `brightness(${1 - Math.min(ad, 2) * .22})` : 'none'; c.style.zIndex = 10 - ad; c.classList.toggle('active', d === 0); c.style.pointerEvents = ad > 2 ? 'none' : 'auto'; });
+      $('revDots').querySelectorAll('button').forEach((b, i) => b.setAttribute('aria-pressed', String(i === cur)));
+    }
+    const go = k => { cur = (cur + k + n) % n; layout(); };
+    const auto = () => { clearInterval(timer); if (!reduce) timer = setInterval(() => go(1), 4500); };
+    $('revFlow').querySelector('.prev').addEventListener('click', () => { go(-1); auto(); }); $('revFlow').querySelector('.next').addEventListener('click', () => { go(1); auto(); });
+    $('revDots').addEventListener('click', e => { const i = [...$('revDots').children].indexOf(e.target); if (i >= 0) { cur = i; layout(); auto(); } });
+    cards.forEach((c, i) => c.addEventListener('click', () => { if (i !== cur) { cur = i; layout(); auto(); } }));
+    let sx = null; $('revGrid').addEventListener('pointerdown', e => { sx = e.clientX; }); addEventListener('pointerup', e => { if (sx === null) return; const dx = e.clientX - sx; sx = null; if (Math.abs(dx) > 40) { go(dx < 0 ? 1 : -1); auto(); } });
+    addEventListener('resize', layout); layout(); auto();
+  })();
 
   /* ---------- material visualizer (state carries into the form) ---------- */
   const M = S.visualizer.materials; const state = { material: S.hero.material || M[0].id };
@@ -74,6 +99,18 @@
   M.forEach(m => { const img = document.createElement('img'); img.src = m.image; img.alt = m.title; img.dataset.id = m.id; img.decoding = 'async'; stage.insertBefore(img, stage.firstChild); });
   $('vizTabs').innerHTML = M.map(m => `<button type="button" role="tab" data-id="${esc(m.id)}" aria-pressed="false"><i>${ICONS[m.id] || ICONS.wood}</i>${esc(m.name)}</button>`).join('');
   $('fMaterial').innerHTML = M.map(m => `<option value="${esc(m.id)}">${esc(m.name)} (${esc(m.title)})</option>`).join('');
+  const SC = window.Scenes3D, Mini = SC && SC.Mini;
+  const slots = { cut: null, pick: null, viz: null, steps: [] };
+  if (Mini) {
+    slots.cut = Mini.add({ canvas: $('cutCanvas'), build: SC.cutaway($('cutCanvas')) });
+    document.querySelectorAll('#stepsGrid canvas[data-scene]').forEach(c => { const k = c.dataset.scene; const b = k === 'phone' ? SC.phone(c) : k === 'tape' ? SC.tape(c) : SC.built(c, S.hero.material); slots.steps.push(Mini.add({ canvas: c, build: b })); });
+    slots.pick = Mini.add({ canvas: $('pickCanvas'), build: SC.section($('pickCanvas'), () => state.material) });
+    if (S.visualizer.enable3d) {
+      const vc = $('vizCanvas'), vm = $('vizMode');
+      vm.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; vm.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b))); const on = b.dataset.v === '3d'; stage.classList.toggle('is3d', on); if (on && !slots.viz) { slots.viz = Mini.add({ canvas: vc, build: SC.yard(vc, () => state.material), dpr: 1.25 }); } });
+    } else { $('vizMode').hidden = true; }
+    if (Mini.ok === false) { $('vizMode').classList.add('nogl'); document.querySelectorAll('#cutCanvas,#pickCanvas,#stepsGrid canvas').forEach(c => c.classList.add('nogl')); }
+  } else { $('vizMode').hidden = true; }
   function setMaterial(id, source) {
     const m = M.find(x => x.id === id); if (!m) return; state.material = id;
     stage.querySelectorAll('img').forEach(i => i.classList.toggle('on', i.dataset.id === id));
@@ -85,6 +122,7 @@
     $('submitWa').textContent = `${S.form.submitLabel} · ${m.name}`;
     $('heroPickOpts').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.id === id)));
     if (window.__heroMaterial) window.__heroMaterial(id);
+    if (Mini && source !== 'init') { if (slots.pick && slots.pick.built) Mini.rebuild(slots.pick); if (slots.viz && slots.viz.built) Mini.rebuild(slots.viz); }
   }
   $('heroPickOpts').innerHTML = M.map(m => `<button type="button" data-id="${esc(m.id)}" aria-pressed="false">${esc(m.name)}</button>`).join('');
   $('heroPickOpts').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setMaterial(b.dataset.id, 'hero'); });
@@ -170,6 +208,14 @@
     if (reduce) tl.progress(1);
     canvas.addEventListener('webglcontextlost', () => sec.classList.add('nogl'));
   })();
+
+  /* cutaway builds as the promise section scrolls through */
+  if (slots.cut) {
+    const setP = p => { slots.cut.progress = p; if (slots.cut.handle && 'progress' in slots.cut.handle) slots.cut.handle.progress = p; };
+    if (reduce) setP(1);
+    else if (window.gsap && window.ScrollTrigger) { gsap.registerPlugin(ScrollTrigger); ScrollTrigger.create({ trigger: '#promise', start: 'top 85%', end: 'bottom 70%', scrub: .4, onUpdate: s => setP(s.progress) }); }
+    else { const upd = () => { const r = $('promise').getBoundingClientRect(); setP(Math.max(0, Math.min(1, (innerHeight * .85 - r.top) / (r.height + innerHeight * .15)))); }; addEventListener('scroll', upd, { passive: true }); upd(); }
+  }
 
   /* smooth anchor scrolling that respects the fixed nav */
   document.querySelectorAll('a[href^="#"]').forEach(a => a.addEventListener('click', e => { const id = a.getAttribute('href'); if (id === '#' || id === '#top') { e.preventDefault(); scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' }); return; } const el = document.querySelector(id); if (!el) return; e.preventDefault(); const y = el.getBoundingClientRect().top + scrollY - 60; scrollTo({ top: y, behavior: reduce ? 'auto' : 'smooth' }); }));

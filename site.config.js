@@ -55,11 +55,22 @@ window.SITE = {
       { value: "48", suffix: "hr", label: "Quote turnaround" },
       { value: "5", suffix: "+ yrs", label: "Serving Central Arkansas" },
       { value: "1", suffix: " crew", label: "Owner on every job" }
-    ]
+    ],
+    /* 3D cutaway of a post footing, shown beside the promise copy */
+    cutaway: {
+      title: "Why our posts never lean",
+      points: [
+        "Posts set 30 inches deep, below the frost line",
+        "Gravel base so water drains away from the post",
+        "Concrete collar crowned to shed rain",
+        "Hot-dipped galvanised hardware on every gate"
+      ]
+    }
   },
 
   /* Material Visualizer. Images must share the same framing so the cross-fade is seamless. */
   visualizer: {
+    enable3d: true,          // adds a Photo / 3D toggle; the 3D view is the same yard you can orbit
     heading: "See it on a real yard before you decide.",
     sub: "Tap a material. Your choice is carried into the estimate form below, so Michael knows exactly what to quote.",
     materials: [
@@ -73,9 +84,9 @@ window.SITE = {
   steps: {
     heading: "From first call to finished fence",
     items: [
-      { title: "Tell us about your yard", text: "Call, WhatsApp or send the form. Pick a material in the visualizer and it comes through with your message." },
-      { title: "Free on-site estimate", text: "Michael walks the property line with you, checks utilities and grade, and leaves a written fixed price. Usually within 48 hours." },
-      { title: "Built in a day or two", text: "Most residential fences go up in one to two days. We clean up, walk the finished fence with you and hand over the gate keys." }
+      { scene: "phone", title: "Tell us about your yard", text: "Call, WhatsApp or send the form. Pick a material in the visualizer and it comes through with your message." },
+      { scene: "tape", title: "Free on-site estimate", text: "Michael walks the property line with you, checks utilities and grade, and leaves a written fixed price. Usually within 48 hours." },
+      { scene: "built", title: "Built in a day or two", text: "Most residential fences go up in one to two days. We clean up, walk the finished fence with you and hand over the gate keys." }
     ]
   },
 
