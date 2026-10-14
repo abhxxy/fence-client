@@ -3,7 +3,7 @@
    ------------------------------------------------------------
    1. Replace the text below.
    2. Drop the client's photos into /assets and update the paths.
-   3. Change the two brand colours.
+   3. Change the accent colours.
    Nothing in index.html / app.js / styles.css is client-specific.
    ============================================================ */
 window.SITE = {
@@ -19,7 +19,7 @@ window.SITE = {
     city: "Little Rock",
     state: "AR",
     stateLong: "Arkansas",
-    baseTown: "Cabot",                // where the crew is based (their old site mixed this up)
+    baseTown: "Cabot",                // where the crew is based
     yearsInBusiness: 5,
     hours: "Mon to Fri 8am to 5pm · Sat 8am to 12pm",
     serviceAreas: ["Little Rock", "North Little Rock", "Sherwood", "Cabot", "Jacksonville", "Austin", "Ward", "Lonoke", "Beebe", "Vilonia", "Maumelle", "Benton"],
@@ -27,11 +27,12 @@ window.SITE = {
     mapEmbed: true                          // false hides the map iframe (useful for previews that block iframes)
   },
 
-  /* Brand colours: pick two, the rest is derived */
+  /* Night theme colours. bg is the page, accent is the string-light amber, moon is the cool highlight. */
   theme: {
-    brand: "#1f4d3a",      // deep green: headers, dark sections
-    accent: "#e07a2f",     // warm orange: buttons, highlights
-    paper: "#f6f4ee"       // page background
+    bg: "#070b14",
+    accent: "#f5b544",
+    ember: "#ff8a3d",
+    moon: "#7fd3ff"
   },
 
   /* Google / review proof shown in the hero and trust row */
@@ -39,12 +40,13 @@ window.SITE = {
 
   hero: {
     eyebrow: "Residential fence installation · Central Arkansas",
-    headline: "A fence built right the first time.",
+    headline: "A fence built right. Day or night.",
     highlight: "built right",            // this phrase inside the headline gets the accent colour
     sub: "Wood, vinyl, aluminum and chain-link fences for homes across Little Rock, Cabot and Central Arkansas. Owner-operated, licensed and insured, free estimates within 48 hours.",
     primaryCta: "Get a free estimate",
-    secondaryCta: "See fence materials",
-    material: "wood"                      // which material the 3D hero builds: wood | vinyl | aluminum | chainlink
+    secondaryCta: "Pick a material",
+    material: "wood",                     // which material the scene builds first: wood | vinyl | aluminum | chainlink
+    background: "assets/nbg.jpg"          // still image used when 3D is not available
   },
 
   promise: {
@@ -56,7 +58,7 @@ window.SITE = {
       { value: "5", suffix: "+ yrs", label: "Serving Central Arkansas" },
       { value: "1", suffix: " crew", label: "Owner on every job" }
     ],
-    /* 3D cutaway of a post footing, shown beside the promise copy */
+    /* Build-spec list shown beside the promise copy */
     cutaway: {
       title: "Why our posts never lean",
       points: [
@@ -70,23 +72,23 @@ window.SITE = {
 
   /* Material Visualizer. Images must share the same framing so the cross-fade is seamless. */
   visualizer: {
-    enable3d: true,          // adds a Photo / 3D toggle; the 3D view is the same yard you can orbit
-    heading: "See it on a real yard before you decide.",
-    sub: "Tap a material. Your choice is carried into the estimate form below, so Michael knows exactly what to quote.",
+    enable3d: true,          // the fence in the scene behind the page rebuilds in the chosen material
+    heading: "Pick a material. Watch it go up.",
+    sub: "The fence in the yard behind this page rebuilds in whatever you choose. Your pick is attached to the estimate form automatically, so Michael knows exactly what to quote.",
     materials: [
-      { id: "wood", name: "Wood", image: "assets/viz-wood.jpg", title: "Cedar privacy fence", blurb: "The classic Arkansas backyard fence. Six feet of warm cedar, full privacy, and the easiest to customise with gates, caps and lattice.", bestFor: "Privacy, pets, resale value", lifespan: "15 to 20 years", upkeep: "Stain or seal every 2 to 3 years", cost: 2 },
-      { id: "vinyl", name: "Vinyl", image: "assets/viz-vinyl.jpg", title: "Vinyl privacy fence", blurb: "Looks freshly painted for decades without ever being painted. No rot, no termites, no staining, and a quick rinse keeps it white.", bestFor: "Zero maintenance, clean modern look", lifespan: "25 to 30 years", upkeep: "Hose it down once a year", cost: 3 },
-      { id: "aluminum", name: "Aluminum", image: "assets/viz-aluminum.jpg", title: "Ornamental aluminum fence", blurb: "The look of wrought iron without the rust. Keeps the view open, meets pool-code requirements, and the powder coat never needs touching up.", bestFor: "Pools, front yards, keeping the view", lifespan: "30+ years", upkeep: "None", cost: 3 },
-      { id: "chainlink", name: "Chain-link", image: "assets/viz-chainlink.jpg", title: "Chain-link fence", blurb: "The most budget-friendly way to secure a yard. Galvanised or black vinyl-coated, built to take Arkansas storms and keep dogs where they belong.", bestFor: "Dogs, large yards, tight budgets", lifespan: "20+ years", upkeep: "None", cost: 1 }
+      { id: "wood", name: "Wood", image: "assets/nviz-wood.jpg", title: "Cedar privacy fence", blurb: "The classic Arkansas backyard fence. Six feet of warm cedar, full privacy, and the easiest to customise with gates, caps and lattice.", bestFor: "Privacy, pets, resale value", lifespan: "15 to 20 years", upkeep: "Stain or seal every 2 to 3 years", cost: 2 },
+      { id: "vinyl", name: "Vinyl", image: "assets/nviz-vinyl.jpg", title: "Vinyl privacy fence", blurb: "Looks freshly painted for decades without ever being painted. No rot, no termites, no staining, and a quick rinse keeps it white.", bestFor: "Zero maintenance, clean modern look", lifespan: "25 to 30 years", upkeep: "Hose it down once a year", cost: 3 },
+      { id: "aluminum", name: "Aluminum", image: "assets/nviz-aluminum.jpg", title: "Ornamental aluminum fence", blurb: "The look of wrought iron without the rust. Keeps the view open, meets pool-code requirements, and the powder coat never needs touching up.", bestFor: "Pools, front yards, keeping the view", lifespan: "30+ years", upkeep: "None", cost: 3 },
+      { id: "chainlink", name: "Chain-link", image: "assets/nviz-chainlink.jpg", title: "Chain-link fence", blurb: "The most budget-friendly way to secure a yard. Galvanised or black vinyl-coated, built to take Arkansas storms and keep dogs where they belong.", bestFor: "Dogs, large yards, tight budgets", lifespan: "20+ years", upkeep: "None", cost: 1 }
     ]
   },
 
   steps: {
     heading: "From first call to finished fence",
     items: [
-      { scene: "phone", title: "Tell us about your yard", text: "Call, WhatsApp or send the form. Pick a material in the visualizer and it comes through with your message." },
-      { scene: "tape", title: "Free on-site estimate", text: "Michael walks the property line with you, checks utilities and grade, and leaves a written fixed price. Usually within 48 hours." },
-      { scene: "built", title: "Built in a day or two", text: "Most residential fences go up in one to two days. We clean up, walk the finished fence with you and hand over the gate keys." }
+      { title: "Tell us about your yard", text: "Call, WhatsApp or send the form. Pick a material above and it comes through with your message." },
+      { title: "Free on-site estimate", text: "Michael walks the property line with you, checks utilities and grade, and leaves a written fixed price. Usually within 48 hours." },
+      { title: "Built in a day or two", text: "Most residential fences go up in one to two days. We clean up, walk the finished fence with you and hand over the gate keys." }
     ]
   },
 
@@ -95,14 +97,14 @@ window.SITE = {
     heading: "Recent work",
     sub: "Sample renders shown until the client's job photos are added. Each photo is tagged by material so visitors can filter.",
     items: [
-      { src: "assets/gal-wood-1.jpg", tag: "wood", caption: "6 ft cedar privacy with walk gate · West Little Rock" },
-      { src: "assets/gal-vinyl-1.jpg", tag: "vinyl", caption: "White vinyl privacy, 180 linear ft · Sherwood" },
-      { src: "assets/gal-aluminum-1.jpg", tag: "aluminum", caption: "Black ornamental aluminum, pool enclosure · Maumelle" },
-      { src: "assets/gal-chainlink-1.jpg", tag: "chainlink", caption: "Galvanised chain-link with double drive gate · Cabot" },
-      { src: "assets/gal-wood-2.jpg", tag: "wood", caption: "Cedar privacy with lattice top · Jacksonville" },
-      { src: "assets/gal-vinyl-2.jpg", tag: "vinyl", caption: "Tan vinyl privacy at golden hour · Benton" },
-      { src: "assets/gal-aluminum-2.jpg", tag: "aluminum", caption: "Bronze aluminum front-yard fence · Lonoke" },
-      { src: "assets/gal-chainlink-2.jpg", tag: "chainlink", caption: "Black vinyl-coated chain-link · North Little Rock" }
+      { src: "assets/ngal-wood-1.jpg", tag: "wood", caption: "6 ft cedar privacy with walk gate · West Little Rock" },
+      { src: "assets/ngal-vinyl-1.jpg", tag: "vinyl", caption: "White vinyl privacy, 180 linear ft · Sherwood" },
+      { src: "assets/ngal-aluminum-1.jpg", tag: "aluminum", caption: "Black ornamental aluminum, pool enclosure · Maumelle" },
+      { src: "assets/ngal-chainlink-1.jpg", tag: "chainlink", caption: "Galvanised chain-link with double drive gate · Cabot" },
+      { src: "assets/ngal-wood-2.jpg", tag: "wood", caption: "Cedar privacy with lattice top · Jacksonville" },
+      { src: "assets/ngal-vinyl-2.jpg", tag: "vinyl", caption: "Tan vinyl privacy · Benton" },
+      { src: "assets/ngal-aluminum-2.jpg", tag: "aluminum", caption: "Bronze aluminum front-yard fence · Lonoke" },
+      { src: "assets/ngal-chainlink-2.jpg", tag: "chainlink", caption: "Black vinyl-coated chain-link · North Little Rock" }
     ]
   },
 

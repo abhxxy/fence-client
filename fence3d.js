@@ -32,24 +32,25 @@
 
   /* Build the yard + fence. Returns handles for animation. */
   function build(scene, o) {
-    o = Object.assign({ material: 'wood', length: 14, gate: true, gateAt: 2.2, color: null, quality: 'high', timeOfDay: 'day', lattice: false, yard: true }, o || {});
+    o = Object.assign({ material: 'wood', length: 14, gate: true, gateAt: 2.2, color: null, quality: 'high', timeOfDay: 'day', lattice: false, yard: true, stringLights: false, lamp: false, lampAt: null }, o || {});
+    const night = o.timeOfDay === 'night';
     const P = Object.assign({}, PRESETS[o.material]); if (o.color) P.color = o.color;
-    const R = { group: new T.Group(), posts: [], rails: [], boards: [], gate: null, gateParts: [], hardware: [], plants: [], yard: new T.Group(), material: o.material, preset: P };
+    const R = { group: new T.Group(), posts: [], rails: [], boards: [], gate: null, gateParts: [], hardware: [], plants: [], bulbs: [], glows: [], pointLights: [], yard: new T.Group(), material: o.material, preset: P };
     scene.add(R.group); if (o.yard) scene.add(R.yard);
     const H = P.height, L = o.length;
     const add = (geo, m, x, y, z, parent) => { const mesh = new T.Mesh(geo, m); mesh.position.set(x, y, z); mesh.castShadow = mesh.receiveShadow = true; (parent || R.group).add(mesh); return mesh; };
 
     /* ---- yard ---- */
     if (o.yard) {
-    const lawn = new T.Mesh(new T.PlaneGeometry(120, 120), new T.MeshStandardMaterial({ map: tex('grass', 40, 40), roughness: 1 })); lawn.rotation.x = -Math.PI / 2; lawn.receiveShadow = true; R.yard.add(lawn);
+    const lawn = new T.Mesh(new T.PlaneGeometry(120, 120), new T.MeshStandardMaterial({ map: tex('grass', 40, 40), roughness: 1, color: col(o.timeOfDay === 'night' ? '#5d6b5c' : '#ffffff') })); lawn.rotation.x = -Math.PI / 2; lawn.receiveShadow = true; R.yard.add(lawn);
     // mulch bed along the fence (owner's side), patio corner at right
     add(new T.BoxGeometry(L + 1, .06, .9), new T.MeshStandardMaterial({ map: tex('mulch', 8, 1), roughness: 1 }), 0, .03, .55, R.yard);
     // shrubs and flowers in the bed
     const greens = ['#3f7a3b', '#4c8a44', '#38703a', '#5a9a4c', '#2f6a34'];
-    const leaf = i => std(greens[i % greens.length], { roughness: .95 });
+    const leaf = i => { const m = std(greens[i % greens.length], { roughness: .95 }); if (night) m.color.multiplyScalar(.5); return m; };
     const shrub = (x, z, r, i) => { const m = add(new T.SphereGeometry(r, 10, 8), leaf(i), x, r * .72, z, R.yard); m.scale.y = .8; R.plants.push(m); return m; };
     [-5.2, -3.9, -1.1, 1.4, 3.7, 5.1].forEach((x, i) => shrub(x, .55, .34 + (i % 3) * .05, i));
-    const flowerM = [std('#d9413a'), std('#f1c232'), std('#f5f1e8'), std('#c55a9f'), std('#8a5fc9')];
+    const flowerM = [std('#d9413a'), std('#f1c232'), std('#f5f1e8'), std('#c55a9f'), std('#8a5fc9')]; if (night) flowerM.forEach(m => m.color.multiplyScalar(.6));
     for (let i = 0; i < 26; i++) { const x = -6.5 + Math.random() * 13; const m = add(new T.SphereGeometry(.05, 7, 6), flowerM[i % 5], x, .1, .35 + Math.random() * .45, R.yard); R.plants.push(m); }
     // trees behind the fence (neighbour side) and one in the yard
     const bark = std('#5a3d2a', { roughness: 1 });
@@ -61,7 +62,7 @@
     const roofS = new T.Shape(); roofS.moveTo(-3.2, 0); roofS.lineTo(3.2, 0); roofS.lineTo(0, 1.8); roofS.closePath();
     const roofG = new T.ExtrudeGeometry(roofS, { depth: 9.4, bevelEnabled: false }); roofG.translate(0, 0, -4.7);
     const roof = new T.Mesh(roofG, std('#4a4a4f')); roof.rotation.y = Math.PI / 2; roof.position.set(0, 3.2, 0); roof.castShadow = true; nh.add(roof);
-    [-2.8, 0, 2.8].forEach(x => add(new T.BoxGeometry(1.1, 1.2, .1), new T.MeshPhysicalMaterial({ color: col('#8fb3cc'), roughness: .1, metalness: .05 }), x, 1.7, 3.03, nh));
+    [-2.8, 0, 2.8].forEach(x => add(new T.BoxGeometry(1.1, 1.2, .1), o.timeOfDay === 'night' ? new T.MeshStandardMaterial({ color: col('#ffd9a0'), emissive: col('#ffb45c'), emissiveIntensity: 1.6, roughness: .4 }) : new T.MeshPhysicalMaterial({ color: col('#8fb3cc'), roughness: .1, metalness: .05 }), x, 1.7, 3.03, nh));
 
     }
     /* ---- fence ---- */
@@ -125,6 +126,31 @@
         const mesh = new T.Mesh(new T.PlaneGeometry(inner, H - .08), meshM); mesh.position.set(lx, (H - .08) / 2 + .03, 0); mesh.castShadow = true; mesh.receiveShadow = true; target.add(mesh); mesh.userData.order = isGate ? 0 : (mesh.position.x - x0) / L; mesh.userData.panel = true; R.boards.push(mesh); if (isGate) R.gateParts.push(mesh);
       }
     }
+    // string lights: a sagging wire between post tops with warm bulbs (night scenes)
+    if (o.stringLights) {
+      const bulbM = new T.MeshStandardMaterial({ color: col('#ffe3b0'), emissive: col('#ffb75a'), emissiveIntensity: 2.2, roughness: .3 });
+      const wireM = new T.MeshStandardMaterial({ color: col('#1a1a1a'), roughness: .8 });
+      const glowT = tex('glow', 1, 1, true); glowT.wrapS = glowT.wrapT = T.ClampToEdgeWrapping;
+      const topY = H + .35, sag = .22, perSpan = 5;
+      for (let i = 0; i < sections; i++) {
+        const xa = x0 + i * secW, xb = xa + secW;
+        const pts = []; for (let k = 0; k <= 10; k++) { const t = k / 10; pts.push(new T.Vector3(xa + t * secW, topY - Math.sin(Math.PI * t) * sag, .06)); }
+        const wire = new T.Mesh(new T.TubeGeometry(new T.CatmullRomCurve3(pts), 10, .006, 5, false), wireM); R.group.add(wire); R.rails.push(wire);
+        for (let k = 1; k <= perSpan; k++) { const t = k / (perSpan + 1); const bx = xa + t * secW, by = topY - Math.sin(Math.PI * t) * sag - .07; const b = add(new T.SphereGeometry(.035, 10, 8), bulbM, bx, by, .06); b.castShadow = false; R.bulbs.push(b); const g = new T.Sprite(new T.SpriteMaterial({ map: glowT, transparent: true, opacity: .75, depthWrite: false, blending: T.AdditiveBlending })); g.scale.set(.42, .42, 1); g.material.color = new T.Color(1.0, .78, .5); g.position.set(bx, by, .07); R.group.add(g); R.glows.push(g); }
+        if (i % 2 === 0) { const pl = new T.PointLight(0xffb45c, 1.1, 6.5, 2); pl.position.set((xa + xb) / 2, topY - .1, .6); R.group.add(pl); R.pointLights.push(pl); }
+      }
+      // posts get a hook on top for the wire
+      R.posts.forEach(p => { if (p.geometry && p.geometry.parameters && p.geometry.parameters.height) { const hk = add(new T.CylinderGeometry(.012, .012, .34, 6), wireM, p.position.x, H + .18, .06); hk.castShadow = false; } });
+    }
+    // lamp post on the yard side near the gate
+    if (o.lamp) {
+      const lx = o.lampAt ? o.lampAt[0] : x0 + (gateSec >= 0 ? (gateSec + 1) * secW : L / 2) + .7, lz = o.lampAt ? o.lampAt[1] : 1.4; const lp = new T.Group(); lp.position.set(lx, 0, lz); R.yard.add(lp); R.lamp = lp;
+      const dark = std('#1d1f23', { metalness: .4, roughness: .5 });
+      add(new T.CylinderGeometry(.04, .06, 2.4, 10), dark, 0, 1.2, 0, lp); add(new T.CylinderGeometry(.14, .14, .06, 12), dark, 0, .03, 0, lp);
+      const headM = new T.MeshStandardMaterial({ color: col('#fff1d0'), emissive: col('#ffc46a'), emissiveIntensity: o.timeOfDay === 'night' ? 1.8 : 0, roughness: .4 });
+      add(new T.BoxGeometry(.3, .34, .3), headM, 0, 2.55, 0, lp); const cap = new T.Mesh(new T.ConeGeometry(.28, .18, 4), dark); cap.rotation.y = Math.PI / 4; cap.position.y = 2.8; lp.add(cap); add(new T.BoxGeometry(.1, .08, .1), dark, 0, 2.38, 0, lp);
+      if (o.timeOfDay === 'night') { const gl = new T.Sprite(new T.SpriteMaterial({ map: tex('glow', 1, 1, true), transparent: true, opacity: .9, depthWrite: false, blending: T.AdditiveBlending })); gl.scale.set(2.6, 2.6, 1); gl.position.y = 2.55; lp.add(gl); R.glows.push(gl); const pl = new T.PointLight(0xffc46a, 1.9, 12, 2); pl.position.y = 2.5; lp.add(pl); R.pointLights.push(pl); R.lampLight = pl; R.lampGlow = gl; R.lampHead = headM; }
+    }
     // gate hardware
     if (R.gate) { const hw = std('#222', { metalness: .6, roughness: .4 }); const g = R.gate; const inner = secW - P.postSize; [.35, H - .35].forEach(y => { const h = add(new T.BoxGeometry(.05, .08, .07), hw, .03, y, .03, g); R.gateParts.push(h); R.hardware.push(h); }); const latch = add(new T.BoxGeometry(.06, .12, .05), hw, inner - .06, H / 2 + .1, .04, g); R.gateParts.push(latch); R.hardware.push(latch); }
     return R;
@@ -132,6 +158,13 @@
 
   /* ---------- lighting, sky, env ---------- */
   function lights(scene, timeOfDay, shadowSize) {
+    if (timeOfDay === 'night') {
+      const hemi = new T.HemisphereLight(0x2c3f6a, 0x07090e, .28); scene.add(hemi);
+      const moon = new T.DirectionalLight(0x9fb8e8, .3); moon.position.set(9, 14, -6); moon.castShadow = true; moon.shadow.mapSize.set(shadowSize || 2048, shadowSize || 2048);
+      const s = moon.shadow.camera; s.left = s.bottom = -14; s.right = s.top = 14; s.near = 1; s.far = 60; moon.shadow.bias = -.0005; moon.shadow.normalBias = .02; scene.add(moon); scene.add(moon.target);
+      scene.add(new T.AmbientLight(0x2a3650, .12));
+      return { hemi, sun: moon };
+    }
     const dusk = timeOfDay === 'golden';
     const hemi = new T.HemisphereLight(dusk ? 0xd9c2b8 : 0xbcd7f2, dusk ? 0x4a4030 : 0x5f6f4a, dusk ? .55 : .75); scene.add(hemi);
     const sun = new T.DirectionalLight(dusk ? 0xffb070 : 0xfff0d6, dusk ? 1.9 : 2.3); sun.position.set(dusk ? -14 : -9, dusk ? 5 : 13, dusk ? 10 : 11); sun.castShadow = true;
@@ -142,6 +175,7 @@
   const skyVS = 'varying vec3 vP; void main(){ vP=position; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }';
   const skyFS = 'uniform vec3 top,hor,gnd,sunDir,sunCol; varying vec3 vP; void main(){ vec3 d=normalize(vP); float h=d.y; vec3 c=mix(hor,top,smoothstep(0.0,0.4,h)); c=mix(gnd,c,smoothstep(-0.05,0.01,h)); float s=max(dot(d,sunDir),0.0); c+=sunCol*(pow(s,1200.0)*2.0+pow(s,40.0)*0.35+pow(s,6.0)*0.1); gl_FragColor=vec4(c,1.0);\n#include <tonemapping_fragment>\n#include <encodings_fragment>\n}';
   function sky(scene, timeOfDay, sunPos) {
+    if (timeOfDay === 'night') return nightSky(scene, sunPos);
     const dusk = timeOfDay === 'golden';
     const u = { top: { value: col(dusk ? '#4a5a8c' : '#3a80d8') }, hor: { value: col(dusk ? '#f3b27e' : '#cfe3f5') }, gnd: { value: col('#6b8a5a') }, sunDir: { value: sunPos.clone().normalize() }, sunCol: { value: col(dusk ? '#ffb070' : '#fff6e0') } };
     const m = new T.Mesh(new T.SphereGeometry(100, 32, 16), new T.ShaderMaterial({ side: T.BackSide, depthWrite: false, uniforms: u, vertexShader: skyVS, fragmentShader: skyFS })); scene.add(m);
@@ -150,10 +184,30 @@
     for (let i = 0; i < 6; i++) { const s = new T.Sprite(new T.SpriteMaterial({ map: ct, transparent: true, opacity: .85, depthWrite: false })); const sc = 10 + Math.random() * 8; s.scale.set(sc, sc * .5, 1); s.position.set(-40 + Math.random() * 80, 14 + Math.random() * 8, -45 - Math.random() * 20); s.userData.v = .003 + Math.random() * .004; scene.add(s); clouds.push(s); }
     return { mesh: m, clouds };
   }
-  function env(renderer) {
+  function nightSky(scene, moonPos) {
+    const u = { top: { value: col('#05070f') }, hor: { value: col('#15213d') }, gnd: { value: col('#070a10') }, sunDir: { value: moonPos.clone().normalize() }, sunCol: { value: col('#9fb8e8').multiplyScalar(.35) } };
+    const m = new T.Mesh(new T.SphereGeometry(100, 32, 16), new T.ShaderMaterial({ side: T.BackSide, depthWrite: false, uniforms: u, vertexShader: skyVS, fragmentShader: skyFS })); scene.add(m);
+    scene.fog = new T.Fog(0x0a1020, 26, 95);
+    // stars
+    const n = 700, pos = new Float32Array(n * 3), sz = new Float32Array(n);
+    for (let i = 0; i < n; i++) { const th = Math.random() * Math.PI * 2, ph = Math.acos(Math.random() * .85 + .12); const r = 90; pos[i * 3] = r * Math.sin(ph) * Math.cos(th); pos[i * 3 + 1] = r * Math.cos(ph); pos[i * 3 + 2] = r * Math.sin(ph) * Math.sin(th); sz[i] = .4 + Math.random() * 1.4; }
+    const sg = new T.BufferGeometry(); sg.setAttribute('position', new T.BufferAttribute(pos, 3)); sg.setAttribute('aSize', new T.BufferAttribute(sz, 1));
+    const stars = new T.Points(sg, new T.ShaderMaterial({ transparent: true, depthWrite: false, uniforms: { time: { value: 0 } }, vertexShader: 'attribute float aSize; varying float vA; uniform float time; void main(){ vA = .55 + .45*sin(time*1.3 + position.x*7.0 + position.y*3.0); vec4 mv = modelViewMatrix*vec4(position,1.0); gl_PointSize = aSize * 2.2; gl_Position = projectionMatrix*mv; }', fragmentShader: 'varying float vA; void main(){ float d = length(gl_PointCoord-.5); if(d>.5) discard; gl_FragColor = vec4(.85,.9,1.0, vA*(1.0-d*2.0)); }' })); scene.add(stars);
+    // moon
+    const moon = new T.Mesh(new T.SphereGeometry(2.2, 20, 14), new T.MeshBasicMaterial({ color: new T.Color(2.4, 2.5, 2.7) })); moon.position.copy(moonPos.clone().normalize().multiplyScalar(80)); scene.add(moon);
+    const mg = new T.Sprite(new T.SpriteMaterial({ map: tex('glow', 1, 1, true), transparent: true, opacity: .55, depthWrite: false, blending: T.AdditiveBlending, color: new T.Color(.8, .9, 1.2) })); mg.scale.set(22, 22, 1); mg.position.copy(moon.position); scene.add(mg);
+    // fireflies
+    const fn = 70, fp = new Float32Array(fn * 3), seed = [];
+    for (let i = 0; i < fn; i++) { const x = -9 + Math.random() * 18, y = .3 + Math.random() * 1.8, z = -4 + Math.random() * 9; fp[i * 3] = x; fp[i * 3 + 1] = y; fp[i * 3 + 2] = z; seed.push({ x, y, z, a: Math.random() * 6.28, s: .4 + Math.random() * .8 }); }
+    const fg = new T.BufferGeometry(); fg.setAttribute('position', new T.BufferAttribute(fp, 3));
+    const flies = new T.Points(fg, new T.ShaderMaterial({ transparent: true, depthWrite: false, blending: T.AdditiveBlending, uniforms: { time: { value: 0 } }, vertexShader: 'varying float vA; uniform float time; void main(){ vA = .35 + .65*max(0.0, sin(time*1.7 + position.x*3.3 + position.z*2.1)); vec4 mv = modelViewMatrix*vec4(position,1.0); gl_PointSize = (9.0 + 4.0*vA) * (6.0 / max(1.0, -mv.z)); gl_Position = projectionMatrix*mv; }', fragmentShader: 'varying float vA; void main(){ float d = length(gl_PointCoord-.5); if(d>.5) discard; float e = smoothstep(.5,.0,d); gl_FragColor = vec4(1.0,.85,.45, vA*e); }' })); scene.add(flies);
+    const update = (now) => { const t = now / 1000; stars.material.uniforms.time.value = t; flies.material.uniforms.time.value = t; const a = fg.attributes.position.array; for (let i = 0; i < fn; i++) { const q = seed[i]; a[i * 3] = q.x + Math.sin(t * q.s + q.a) * .6; a[i * 3 + 1] = q.y + Math.sin(t * q.s * 1.3 + q.a * 2.0) * .25; a[i * 3 + 2] = q.z + Math.cos(t * q.s * .8 + q.a) * .5; } fg.attributes.position.needsUpdate = true; };
+    return { mesh: m, clouds: [], stars, flies, moon, update };
+  }
+  function env(renderer, night) {
     const pm = new T.PMREMGenerator(renderer); const s = new T.Scene();
-    const m = new T.Mesh(new T.SphereGeometry(50, 24, 12), new T.ShaderMaterial({ side: T.BackSide, uniforms: { top: { value: col('#3f7fcf') }, hor: { value: col('#dce8f3') }, gnd: { value: col('#57704a') } }, vertexShader: skyVS, fragmentShader: 'uniform vec3 top,hor,gnd; varying vec3 vP; void main(){ float h=normalize(vP).y; vec3 c=mix(hor,top,smoothstep(0.0,0.6,h)); c=mix(gnd,c,smoothstep(-0.05,0.03,h)); gl_FragColor=vec4(c,1.0);\n#include <encodings_fragment>\n}' })); s.add(m);
-    const sun = new T.Mesh(new T.SphereGeometry(2.5, 12, 8), new T.MeshBasicMaterial({ color: new T.Color(9, 8, 6.5) })); sun.position.set(-18, 24, 10); s.add(sun);
+    const m = new T.Mesh(new T.SphereGeometry(50, 24, 12), new T.ShaderMaterial({ side: T.BackSide, uniforms: { top: { value: col(night ? '#0a1020' : '#3f7fcf') }, hor: { value: col(night ? '#2a3a60' : '#dce8f3') }, gnd: { value: col(night ? '#0a0c10' : '#57704a') } }, vertexShader: skyVS, fragmentShader: 'uniform vec3 top,hor,gnd; varying vec3 vP; void main(){ float h=normalize(vP).y; vec3 c=mix(hor,top,smoothstep(0.0,0.6,h)); c=mix(gnd,c,smoothstep(-0.05,0.03,h)); gl_FragColor=vec4(c,1.0);\n#include <encodings_fragment>\n}' })); s.add(m);
+    const sun = new T.Mesh(new T.SphereGeometry(2.5, 12, 8), new T.MeshBasicMaterial({ color: night ? new T.Color(1.2, 1.4, 2.0) : new T.Color(9, 8, 6.5) })); sun.position.set(night ? 18 : -18, 24, night ? -10 : 10); s.add(sun);
     const t = pm.fromScene(s, .04).texture; pm.dispose(); return t;
   }
   function renderer(canvas, dpr) { const r = new T.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' }); r.setPixelRatio(Math.min(global.devicePixelRatio || 1, dpr || 2)); r.shadowMap.enabled = true; r.shadowMap.type = T.PCFSoftShadowMap; r.outputEncoding = T.sRGBEncoding; r.toneMapping = T.ACESFilmicToneMapping; r.toneMappingExposure = 1.05; r.setClearColor(0, 0); return r; }
@@ -165,9 +219,10 @@
     gallery1: { pos: [-3.5, 1.4, 5.5], look: [0.5, 1.0, 0], fov: 40 },
     gallery2: { pos: [5.5, 2.4, 4.8], look: [-1, .9, 0], fov: 40 },
     gallery3: { pos: [0.8, 1.2, 4.6], look: [0.8, 1.0, 0], fov: 42 },
-    gallery4: { pos: [-5.5, 2.6, 7.5], look: [1.5, .8, -1], fov: 38 }
+    gallery4: { pos: [-5.5, 2.6, 7.5], look: [1.5, .8, -1], fov: 38 },
+    night: { pos: [-7.4, 1.3, 8.6], look: [1.0, 1.3, -0.6], fov: 44 }
   };
 
   function dispose(group) { group.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => m.dispose()); }); if (group.parent) group.parent.remove(group); }
-  global.Fence3D = { build, lights, sky, env, renderer, tex, col, PRESETS, CAMS, dispose };
+  global.Fence3D = { build, lights, sky, nightSky, env, renderer, tex, col, PRESETS, CAMS, dispose };
 })(window);
